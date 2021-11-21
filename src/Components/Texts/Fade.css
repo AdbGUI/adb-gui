@@ -1,0 +1,9 @@
+/* create fade class */
+.fade {
+  opacity: 0;
+}
+/* add opacity transition trigger on fade-in class */
+.fade-in { opacity: 1; }
+/* add opacity transition trigger on fade-out class */
+.fade-out { opacity: 0; }
+
