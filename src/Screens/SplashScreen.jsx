@@ -3,6 +3,7 @@ import '../Styles/SplashScreen.css'
 
 // Components
 import Fade from '../Components/Texts/Fade';
+import { invoke } from '@tauri-apps/api';
 
 const tips = [
     "Not click the android button o.O",
@@ -12,9 +13,14 @@ const tips = [
 ];
 
 const tipDuration = 4000;
+const splashDuration = 5000;
 
 const SplashScreen = ({ enableTips = true }) => {
     const [tip, setTip] = useState(tips[0]);
+
+    setTimeout(() => {
+        invoke("close_splashscreen");
+    }, splashDuration);
 
     useEffect(() => {
         if (enableTips) {
