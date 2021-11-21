@@ -1,0 +1,60 @@
+.splash-screen {
+    align-items: center;
+    background-color: #fff;
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    overflow: hidden;
+    position: fixed;
+    width: 100vw;
+}
+.splash-screen-content {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 375px;
+}
+
+.splash-screen-logo {
+    display: flex;
+    justify-content: center;
+}
+.splash-screen-text {
+    color: #4949494;
+    font-size: 1.5em;
+    font-weight: 300;
+    text-align: center;
+    font-variant: small-caps;
+}
+
+.android-path {
+    stroke-dasharray: 200;
+    animation: android-dash 2s linear infinite;
+}
+/* fade class */
+.fade {
+    animation: fadeIn 1s;
+}
+/* fade animation */
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes android-dash {
+    from {
+        stroke-dashoffset: 400;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
+}
