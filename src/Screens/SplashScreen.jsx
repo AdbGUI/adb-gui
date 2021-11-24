@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import { event } from '@tauri-apps/api';
 import '../Styles/SplashScreen.css'
 
 // Components
 import Fade from '../Components/Texts/Fade';
-import { invoke } from '@tauri-apps/api';
 
 const tips = [
     "Not click the android button o.O",
@@ -13,16 +13,22 @@ const tips = [
 ];
 
 const tipDuration = 4000;
-const splashDuration = 5000;
 
 const SplashScreen = ({ enableTips = true }) => {
     const [tip, setTip] = useState(tips[0]);
-
-    setTimeout(() => {
-        invoke("close_splashscreen");
-    }, splashDuration);
+    const [updating, setUpdating] = useState({show: true, msg: "Updating..."});
 
     useEffect(() => {
+        event.listen("update-aviable", () => {
+            setUpdating({show: true});
+            event.listen("done-install", (res) => {
+                if (res.success) {
+                    setUpdating({show: false});
+                } else if (res.error) {
+                    setUpdating({msg: res.msg});
+                }
+            });
+        })
         if (enableTips) {
             const timeout = setInterval(() => {
                 // Get random tip with no duplicates
@@ -33,7 +39,7 @@ const SplashScreen = ({ enableTips = true }) => {
             }, tipDuration);
             return () => clearInterval(timeout);
         }
-    }, [tip, enableTips]);
+    }, [tip, enableTips, updating]);
 
     return (
         <div className="splash-screen">
@@ -47,6 +53,9 @@ const SplashScreen = ({ enableTips = true }) => {
                         <path className="android-path" d="M132 124C136.418 124 140 120.418 140 116C140 111.582 136.418 108 132 108C127.582 108 124 111.582 124 116C124 120.418 127.582 124 132 124Z" fill="#494949" />
                     </svg>
                 </div>
+                {updating.show &&
+                    <span className="updating-text"> {updating.msg} </span>
+                }
                 {enableTips &&
                     <Fade className="splash-screen-text" content={tip} timeWait={(tipDuration / 2)} />
                 }

@@ -28,6 +28,15 @@
     font-variant: small-caps;
 }
 
+.updating-text {
+    color: #494949;
+    font-size: 1em;
+    font-weight: 300;
+    text-align: center;
+    font-variant: all-small-caps;
+    margin-bottom: 0.5em;
+}
+
 .android-path {
     stroke-dasharray: 200;
     animation: android-dash 2s linear infinite;
