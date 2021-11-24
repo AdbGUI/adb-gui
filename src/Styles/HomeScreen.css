@@ -1,0 +1,6 @@
+.homescreen {
+    background-color: white;
+    display: flex;
+    padding: 10px;
+    width: 100%;
+}
