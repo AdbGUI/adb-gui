@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use tauri::{generate_context, Manager, State, Window};
+use tauri::{Manager, Position, State, Window, generate_context};
 
 mod utils;
 mod install;
