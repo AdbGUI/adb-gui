@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { event } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/tauri';
 import '../Styles/SplashScreen.css'
 
 // Components
@@ -21,19 +21,10 @@ const SplashScreen = ({ enableTips = true }) => {
     useEffect(() => {
         // Close SplashScreen
         setTimeout(() => {
-            setUpdating("Closed SplashScreen")
-            event.emit("close_splashscreen")
+            setUpdating({ show: true, msg: "Closed SplashScreen"})
+            invoke("close_splashscreen")
         }, 3000);
-        event.listen("update-aviable", () => {
-            setUpdating({ show: true });
-            event.listen("done-install", (res) => {
-                if (res.success) {
-                    setUpdating({ show: false });
-                } else if (res.error) {
-                    setUpdating({ msg: res.msg });
-                }
-            });
-        })
+
         if (enableTips) {
             const timeout = setInterval(() => {
                 // Get random tip with no duplicates
