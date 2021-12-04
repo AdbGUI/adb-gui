@@ -59,18 +59,20 @@ const SelectPath = () => {
     )
 }
 
-const NextButton = ({ showRounded = false }) => {
+const NextButton = ({ showRounded = false, onClick = () => {} }) => {
     return (
         <div className="next-button-container">
             {showRounded ?
                 <Button className="next-button"
                     variant="contained"
                     size="large"
+                    onClick={onClick}
                 >Continue<AiOutlineArrowRight className="next-button-icon" /></Button>
                 :
                 <Button className="next-button"
                     variant="contained"
                     size="large"
+                    onClick={onClick}
                 >Continue<AiOutlineArrowRight className="next-button-icon" /></Button>
             }
         </div>
@@ -107,7 +109,7 @@ const InstallScreen = () => {
             </header>
             <div className="install-content">
                 {installSteps[installStep].element}
-                <NextButton />
+                <NextButton onClick={() => setInstallStep(installStep + 1)}/>
             </div>
         </div>
     )
