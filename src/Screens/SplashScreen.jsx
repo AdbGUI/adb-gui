@@ -16,16 +16,21 @@ const tipDuration = 4000;
 
 const SplashScreen = ({ enableTips = true }) => {
     const [tip, setTip] = useState(tips[0]);
-    const [updating, setUpdating] = useState({show: true, msg: "Updating..."});
+    const [updating, setUpdating] = useState({ show: true, msg: "Loading..." });
 
     useEffect(() => {
+        // Close SplashScreen
+        setTimeout(() => {
+            setUpdating("Closed SplashScreen")
+            event.emit("close_splashscreen")
+        }, 3000);
         event.listen("update-aviable", () => {
-            setUpdating({show: true});
+            setUpdating({ show: true });
             event.listen("done-install", (res) => {
                 if (res.success) {
-                    setUpdating({show: false});
+                    setUpdating({ show: false });
                 } else if (res.error) {
-                    setUpdating({msg: res.msg});
+                    setUpdating({ msg: res.msg });
                 }
             });
         })
