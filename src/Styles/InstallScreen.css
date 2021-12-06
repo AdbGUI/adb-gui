@@ -82,7 +82,7 @@
     font-weight: 300;
     font-variant: small-caps;
     margin-bottom: 2rem;
-    color: #4949494;
+    color: #494949;
 }
 
 .install-path-input-container {
@@ -104,6 +104,27 @@
     box-shadow: none !important;
 }
 
+/*
+ *
+ *      Toggle Checkboxes
+ *
+ */
+.install-checkbox-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    margin-left: 5rem;
+}
+
+.checkbox-item {
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 1rem;
+}
 
 /*
  *

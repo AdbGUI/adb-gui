@@ -3,6 +3,7 @@ import { Button, TextField } from '@mui/material';
 import { AiOutlineArrowRight } from 'react-icons/ai'
 import { open as openFileDialog } from '@tauri-apps/api/dialog';
 import { event } from '@tauri-apps/api';
+import ToggleCheckbox from '../Components/ToggleCheck/ToggleCheckbox';
 import '../Styles/InstallScreen.css';
 
 // import images
@@ -59,6 +60,30 @@ const SelectPath = () => {
     )
 }
 
+const ShortcutStep = () => {
+    const [shortcuts, setShortcuts] = useState(false);
+    const [menuShortcuts, setMenuShortcuts] = useState(true);
+    return (
+        <div className="install-path">
+            <h3 className="install-path-title">You would like to...</h3>
+            <div className="install-checkbox-container">
+                <ToggleCheckbox
+                    checked={shortcuts}
+                    onChange={(v) => {setShortcuts(v)}}
+                    className="checkbox-item"
+                    label="Create Desktop Shortcut"
+                    />
+                <ToggleCheckbox
+                    checked={menuShortcuts}
+                    onChange={(v) => {setMenuShortcuts(v)}}
+                    className="checkbox-item"
+                    label="Create Menu Shortcut"
+                    />
+            </div>
+        </div>
+    );
+}
+
 const NextButton = ({ showRounded = false, onClick = () => {} }) => {
     return (
         <div className="next-button-container">
@@ -88,7 +113,7 @@ const installSteps = [
     {
         title: 'Install Options',
         img: Bg02,
-        element: <SelectPath />
+        element: <ShortcutStep />
     },
     {
         title: 'Installing...',
