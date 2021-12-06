@@ -3,6 +3,7 @@ import { Button, TextField } from '@mui/material';
 import { AiOutlineArrowRight } from 'react-icons/ai'
 import { open as openFileDialog } from '@tauri-apps/api/dialog';
 import { event } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/tauri';
 import ToggleCheckbox from '../Components/ToggleCheck/ToggleCheckbox';
 import '../Styles/InstallScreen.css';
 
@@ -34,10 +35,13 @@ const SelectPath = () => {
         }).then((filePath) => {
             if (filePath) {
                 console.log(filePath);
-                if (filePath.length > 0 && typeof (filePath) === "string")
+                if (filePath.length > 0 && typeof (filePath) === "string") {
+                    invoke("set_install_path", { path: filePath });
                     return filePath;
-                else if (filePath.length > 0 && typeof (filePath) === "object")
+                } else if (filePath.length > 0 && typeof (filePath) === "object") {
+                    invoke("set_install_path", { path: filePath[0] });
                     return filePath[0];
+                }
             }
             return '';
         })
@@ -69,13 +73,19 @@ const ShortcutStep = () => {
             <div className="install-checkbox-container">
                 <ToggleCheckbox
                     checked={shortcuts}
-                    onChange={(v) => {setShortcuts(v)}}
+                    onChange={(v) => {
+                        setShortcuts(v);
+                        invoke("set_desktop_shortcut", { shortcut: v});
+                    }}
                     className="checkbox-item"
                     label="Create Desktop Shortcut"
                     />
                 <ToggleCheckbox
                     checked={menuShortcuts}
-                    onChange={(v) => {setMenuShortcuts(v)}}
+                    onChange={(v) => {
+                        setMenuShortcuts(v);
+                        invoke("set_menu_shortcut", { shortcut: v});
+                    }}
                     className="checkbox-item"
                     label="Create Menu Shortcut"
                     />
@@ -86,13 +96,13 @@ const ShortcutStep = () => {
 
 const NextButton = ({ showRounded = false, onClick = () => {} }) => {
     return (
-        <div className="next-button-container">
+        <div className={`next-button-container ${showRounded ? "next-container-rounded" : ""}`}>
             {showRounded ?
-                <Button className="next-button"
+                <Button className="next-button next-button-rounded"
                     variant="contained"
-                    size="large"
+                    size="small"
                     onClick={onClick}
-                >Continue<AiOutlineArrowRight className="next-button-icon" /></Button>
+                ><AiOutlineArrowRight className="next-button-icon" style={{color: "#494949", fill: "#494949", marginLeft: 0}} /></Button>
                 :
                 <Button className="next-button"
                     variant="contained"
@@ -134,7 +144,7 @@ const InstallScreen = () => {
             </header>
             <div className="install-content">
                 {installSteps[installStep].element}
-                <NextButton onClick={() => setInstallStep(installStep + 1)}/>
+                <NextButton showRounded={installStep === 1} onClick={() => setInstallStep(installStep + 1)}/>
             </div>
         </div>
     )
