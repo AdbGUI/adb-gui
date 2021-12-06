@@ -34,15 +34,19 @@ pub struct Installer {
 }
 
 impl Installer {
-    pub fn new() -> Self {
+    pub fn new(vers: String) -> Self {
         Self {
             app_root_dir: String::from(get_default_install_path().unwrap().to_str().unwrap()),
-            version: String::from("0.0.1"),
+            version: vers,
             description: String::from("GUI for the commons and more necesary tools on adb"),
             desktop_shortcut: true,
             menu_shortcut: true,
         }
     }
+    pub fn set_install_path(&mut self, path: String) { self.app_root_dir = path; }
+    pub fn set_version(&mut self, version: String) { self.version = version; }
+    pub fn set_desktop_shortcut(&mut self, shortcut: bool) { self.desktop_shortcut = shortcut; }
+    pub fn set_menu_shortcut(&mut self, shortcut: bool) { self.menu_shortcut = shortcut; }
 
     pub fn is_installed(&self) -> bool {
         let conf_path = env::current_exe().unwrap().join("conf.json");
