@@ -1,13 +1,19 @@
-use std::fs::{create_dir_all, set_permissions, File, Permissions};
+use std::fs::{File, Permissions, create_dir_all, remove_file, set_permissions};
 use std::io::copy;
+use std::path::Path;
 use zip::ZipArchive;
 
-pub fn unzip_file(zip_file: File, dest: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn unzip_file(filename: &str, dest: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let path = Path::new(filename);
+    let zip_file = match File::open(&path) {
+        Ok(file) => file,
+        Err(why) => return Err(Box::new(why)),
+    };
     let mut zip = ZipArchive::new(zip_file).unwrap();
     for i in 0..zip.len() {
         let mut file = zip.by_index(i).unwrap();
         let outpath = match file.enclosed_name() {
-            Some(path) => path.to_owned(),
+            Some(path) => Path::new(dest).join(path),
             None => continue,
         };
 
@@ -47,5 +53,6 @@ pub fn unzip_file(zip_file: File, dest: &str) -> Result<(), Box<dyn std::error::
             }
         }
     }
+    remove_file(filename).unwrap();
     Ok(())
 }

@@ -10,6 +10,7 @@ use crate::utils::unzip_file;
 use dirs::{data_local_dir, desktop_dir, executable_dir};
 use futures_util::stream::StreamExt;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 
 pub struct Tool<'a>(&'a str, &'a str);
 
@@ -21,11 +22,15 @@ const TOOLS: [Tool; 2] = [
         "adb",
         "https://dl.google.com/android/repository/platform-tools-latest-{so}.zip",
     ),
-    Tool("scrcpy", ""),
+    Tool(
+        "scrcpy",
+        "https://dl.google.com/android/repository/platform-tools-latest-{so}.zip",
+    ),
 ];
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Installer {
+    pub installing: bool,
     app_root_dir: String,
     version: String,
     description: String,
@@ -36,6 +41,7 @@ pub struct Installer {
 impl Installer {
     pub fn new(vers: String) -> Self {
         Self {
+            installing: false,
             app_root_dir: String::from(get_default_install_path().unwrap().to_str().unwrap()),
             version: vers,
             description: String::from("GUI for the commons and more necesary tools on adb"),
@@ -43,10 +49,10 @@ impl Installer {
             menu_shortcut: true,
         }
     }
-    pub fn set_install_path(&mut self, path: String) { self.app_root_dir = path; }
-    pub fn set_version(&mut self, version: String) { self.version = version; }
+    pub fn set_install_path(&mut self, path: String) { self.app_root_dir = format!("{}/{}/{}", path, AUTHOR, APP_NAME); }
     pub fn set_desktop_shortcut(&mut self, shortcut: bool) { self.desktop_shortcut = shortcut; }
     pub fn set_menu_shortcut(&mut self, shortcut: bool) { self.menu_shortcut = shortcut; }
+    pub fn set_installing(&mut self, installing: bool) { self.installing = installing; }
 
     pub fn is_installed(&self) -> bool {
         let conf_path = env::current_exe().unwrap().join("conf.json");
@@ -69,8 +75,7 @@ impl Installer {
     pub async fn install_tools(
         &self,
         client: Client,
-        progress: &mut u64,
-        progress_tool: impl Fn(String, u64),
+        progress_tool: impl Fn(String),
     ) {
         // download chunks
         for tool in TOOLS.iter() {
@@ -85,15 +90,15 @@ impl Installer {
                 .content_length()
                 .ok_or(format!("Failed to get content length from '{}'", &url))
                 .unwrap();
-            let (tool_name, tool_url) = (&tool.0, &tool.1);
+            let tool_name = &tool.0;
             let tool_dest_path = Path::new(&self.app_root_dir).join(&tool_name);
             let tool_dest_path_str = tool_dest_path.as_path().to_str().unwrap();
             let tool_tmp_path = Path::new(&self.app_root_dir).join(format!("{}.zip", &tool_name));
+            progress_tool(format!("Downloading {}...", tool_name.to_string()));
             if !tool_tmp_path.exists() {
                 let file_downloaded = match File::create(&tool_tmp_path) {
                     Err(why) => panic!("couldn't create {}", why),
                     Ok(mut file) => {
-                        let mut downloaded: u64 = 0;
                         let mut stream = res.bytes_stream();
 
                         while let Some(item) = stream.next().await {
@@ -103,89 +108,68 @@ impl Installer {
                             file.write(&chunk)
                                 .or(Err(format!("Error while writing to file")))
                                 .unwrap();
-                            let new = min(downloaded + (chunk.len() as u64), total_size);
-                            downloaded = new;
-                            progress_tool(format!("Downloading {}...", tool_name.to_string()), new);
                         }
                         file
                     }
                 };
-                unzip_file(file_downloaded, &tool_dest_path_str).unwrap();
+                println!("{:?} downloaded", tool_tmp_path.as_path().as_os_str());
+                unzip_file(&tool_tmp_path.to_str().unwrap(), &tool_dest_path_str).await.unwrap();
             }
-            progress_tool(format!("{} downloaded!", &tool_name), *progress);
+            progress_tool(format!("{} downloaded!", &tool_name));
         }
     }
 
-    pub async fn install(&self, progress_install: impl Fn(String, u64)) {
+    pub async fn install(&mut self, progress_install: impl Fn(String)) {
         let client = Client::new();
         let app_dir = Path::new(&self.app_root_dir);
-        let mut progress: u64 = 0;
-        // Calcule total size
-        let mut max_progress: u64 = 0;
-        for tool in TOOLS.iter() {
-            let url = tool.1;
-            let res = client
-                .get(url)
-                .send()
-                .await
-                .or(Err(format!("Failed to GET from '{}'", &url)))
-                .unwrap();
-            let total_size = res
-                .content_length()
-                .ok_or(format!("Failed to get content length from '{}'", &url))
-                .unwrap();
-            max_progress = max_progress + total_size;
-        }
+        self.installing = true;
 
         // Create directory
         if !&app_dir.exists() {
+            progress_install("Creating directory...".to_string());
             std::fs::create_dir_all(&app_dir).unwrap();
-            progress_install("Creating directory...".to_string(), progress);
-            progress = progress + 1;
         }
 
         // Copy binary
         match env::current_exe() {
             Ok(exe_path) => {
-                std::fs::copy(exe_path, app_dir.join(BINARY_NAME));
-                progress_install("Copying Binary...".to_string(), progress);
-                progress = progress + 1;
+                progress_install("Copying Binary...".to_string());
+                std::fs::copy(exe_path, app_dir.join(BINARY_NAME)).unwrap();
                 if !cfg!(target_os = "windows") {
+                    progress_install("Set Enviroment Variables...".to_string());
                     self.set_env_vars();
-                    progress_install("Set Enviroment Variables...".to_string(), progress);
-                    progress = progress + 1;
                 }
             }
             Err(_) => println!("Error copying binary"),
         }
 
         // Install tools
-        self.install_tools(client, &mut progress, &progress_install);
+        self.install_tools(client, &progress_install).await;
 
         // Create conf.json
         let conf_path = app_dir.join("conf.json");
         if !conf_path.exists() {
+            progress_install("Creating Default Configurations...".to_string());
             let conf = Config::new();
             let conf_str = serde_json::to_string(&conf).unwrap();
             let mut file = File::create(&conf_path).unwrap();
             file.write_all(conf_str.as_bytes()).unwrap();
-            progress_install("Creating Default Configurations...".to_string(), progress);
-            progress = progress + 1;
         }
 
         // Generate shortcuts
         if self.desktop_shortcut || self.menu_shortcut {
+            progress_install("Generating shortcuts...".to_string());
             self.generate_shortcut(
                 self.version.clone(),
                 self.description.clone(),
                 self.desktop_shortcut,
                 self.menu_shortcut,
-            );
-            progress_install("Generating shortcuts...".to_string(), progress);
+            ).await;
         }
+        progress_install("Success Installed".to_string());
     }
 
-    pub fn generate_shortcut(
+    pub async fn generate_shortcut(
         &self,
         version: String,
         description: String,
@@ -207,15 +191,13 @@ impl Installer {
             file_shortcut
                 .write_all(
                     format!(
-                        r#"
-                [Desktop Entry]
-                Version={}
-                Description={}
-                Type=Application
-                Name={}
-                Exec={}
-                Icon={}
-                "#,
+                        r#"[Desktop Entry]
+Version={}
+Description={}
+Type=Application
+Name={}
+Exec={}
+Icon={}"#,
                         version, APP_NAME, description, BINARY_NAME, BINARY_NAME
                     )
                     .as_bytes(),
@@ -233,15 +215,13 @@ impl Installer {
             file_shortcut
                 .write_all(
                     format!(
-                        r#"
-                #!/bin/bash
-                ## This file is created automatically by ADB GUI installer
-                export EXE={exe:s}
-                export SCRIPT={script:s}
-                export ARGS='{args:s}'
-                ## Execute application
-                $EXE $SCRIPT $ARGS
-                "#,
+                        r#"#!/bin/bash
+## This file is created automatically by ADB GUI installer
+export EXE={exe:s}
+export SCRIPT={script:s}
+export ARGS='{args:s}'
+## Execute application
+$EXE $SCRIPT $ARGS"#,
                         version, APP_NAME, description, BINARY_NAME, BINARY_NAME
                     )
                     .as_bytes(),
@@ -259,7 +239,7 @@ pub fn get_so_name() -> String {
     if cfg!(target_os = "windows") {
         return String::from("windows");
     } else if cfg!(target_os = "macos") {
-        return String::from("macos");
+        return String::from("darwin");
     }
     String::from("linux")
 }

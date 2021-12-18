@@ -94,6 +94,42 @@ const ShortcutStep = () => {
     );
 }
 
+const InstallProgress = () => {
+    //const [installProgressText, setInstallProgressText] = useState(["Downloading Tools", "Unziping Tools", "Installing..", "Success Installation"]);
+    const [installProgressText, setInstallProgressText] = useState(null);
+    const [installing, setInstalling] = useState(false);
+
+    useEffect(() => {
+        if (!installing) {
+            invoke("install");
+            console.log("install");
+            setInstalling(true);
+        }
+        event.listen('install-progress', (progress) => {
+            let tmp = installProgressText;
+            // if (installProgressText.length + 1 > 4)
+            //     setInstallProgressText(tmp.shift());
+            if (tmp) {
+                if (!tmp.includes(progress.payload)) {
+                    tmp.push(progress.payload);
+                    setInstallProgressText(tmp);
+                }
+            }
+        });
+    }, [installProgressText, installing]);
+
+    return (
+        <div className="install-progress">
+            <div className="install-progress-text-container">
+                {(installProgressText || []).map(text => <span className="install-progress-text" >{text}</span>)}
+            </div>
+            <div className="install-progress-bar">
+                <div className="install-progress-bar-fill" />
+            </div>
+        </div>
+    )
+}
+
 const NextButton = ({ showRounded = false, onClick = () => {} }) => {
     return (
         <div className={`next-button-container ${showRounded ? "next-container-rounded" : ""}`}>
@@ -128,7 +164,7 @@ const installSteps = [
     {
         title: 'Installing...',
         img: Bg03,
-        element: <SelectPath />
+        element: <InstallProgress />
     }
 ];
 
