@@ -1,7 +1,18 @@
-use std::fs::{File, Permissions, create_dir_all, remove_file, set_permissions};
-use std::io::copy;
-use std::path::Path;
+use std::{
+    fs::{create_dir_all, remove_file, set_permissions, File, Permissions},
+    io::copy,
+    path::Path,
+};
 use zip::ZipArchive;
+
+pub fn get_so_name() -> String {
+    if cfg!(target_os = "windows") {
+        return String::from("windows");
+    } else if cfg!(target_os = "macos") {
+        return String::from("darwin");
+    }
+    String::from("linux")
+}
 
 pub async fn unzip_file(filename: &str, dest: &str) -> Result<(), Box<dyn std::error::Error>> {
     let path = Path::new(filename);
@@ -13,7 +24,14 @@ pub async fn unzip_file(filename: &str, dest: &str) -> Result<(), Box<dyn std::e
     for i in 0..zip.len() {
         let mut file = zip.by_index(i).unwrap();
         let outpath = match file.enclosed_name() {
-            Some(path) => Path::new(dest).join(path),
+            Some(path) => {
+                let path_file_name = path.to_str()
+                    .unwrap()
+                    .split("/")
+                    .next()
+                    .unwrap();
+                Path::new(dest).join(path_file_name)
+            }
             None => continue,
         };
 

@@ -1,20 +1,22 @@
-use std::cmp::min;
 use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::os::unix::prelude::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use crate::config::Config;
-use crate::utils::unzip_file;
+use crate::utils::{unzip_file, get_so_name};
 use dirs::{data_local_dir, desktop_dir, executable_dir};
 use futures_util::stream::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+mod shortcut;
+use shortcut::generate_shortcut;
+
 pub struct Tool<'a>(&'a str, &'a str);
 
-const APP_NAME: &str = "ADB GUI";
+const APP_NAME: &str = "Adb GUI";
+const APP_ICON: &str = "adbgui";
 const BINARY_NAME: &str = "adbgui";
 const AUTHOR: &str = "SergioRibera";
 const TOOLS: [Tool; 2] = [
@@ -177,71 +179,10 @@ impl Installer {
         on_startup_menu: bool,
     ) {
         let path = self.get_installed_path();
-        #[cfg(target_os = "windows")]
-        {
-            let mut path_shortcut = path.clone();
-            path_shortcut.push("adbgui.lnk");
-            std::os::windows::fs::symlink_file(path.join("adbgui.exe"), &path_shortcut);
-        }
-        #[cfg(target_os = "linux")]
-        {
-            let mut path_shortcut = path.clone();
-            path_shortcut.push("adbgui.desktop");
-            let mut file_shortcut = File::create(&path_shortcut).unwrap();
-            file_shortcut
-                .write_all(
-                    format!(
-                        r#"[Desktop Entry]
-Version={}
-Description={}
-Type=Application
-Name={}
-Exec={}
-Icon={}"#,
-                        version, APP_NAME, description, BINARY_NAME, BINARY_NAME
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
-            let mut perms = path_shortcut.metadata().unwrap().permissions();
-            perms.set_mode(0o755); // make this file executable
-            std::fs::set_permissions(path_shortcut, perms).unwrap();
-        }
-        #[cfg(target_os = "macos")]
-        {
-            let mut path_shortcut = path.clone();
-            path_shortcut.push("adbgui.app");
-            let file_shortcut = File::create(&path_shortcut).unwrap();
-            file_shortcut
-                .write_all(
-                    format!(
-                        r#"#!/bin/bash
-## This file is created automatically by ADB GUI installer
-export EXE={exe:s}
-export SCRIPT={script:s}
-export ARGS='{args:s}'
-## Execute application
-$EXE $SCRIPT $ARGS"#,
-                        version, APP_NAME, description, BINARY_NAME, BINARY_NAME
-                    )
-                    .as_bytes(),
-                )
-                .unwrap();
 
-            let mut perms = path_shortcut.metadata().unwrap().permissions();
-            perms.set_mode(0o755); // make this file executable
-            std::fs::set_permissions(path_shortcut, perms).unwrap();
-        }
+        generate_shortcut(path, version, description);
+        todo!("Add \"from\" and \"to\" path");
     }
-}
-
-pub fn get_so_name() -> String {
-    if cfg!(target_os = "windows") {
-        return String::from("windows");
-    } else if cfg!(target_os = "macos") {
-        return String::from("darwin");
-    }
-    String::from("linux")
 }
 
 pub fn get_default_install_path() -> Option<PathBuf> {
@@ -250,7 +191,7 @@ pub fn get_default_install_path() -> Option<PathBuf> {
         data_local_dir()
             .unwrap()
             .join(AUTHOR)
-            .join(APP_NAME.replace(" ", "_")),
+            .join(APP_NAME.replace(" ", "")),
     );
 
     // TODO: Add this path into enviroment variables
@@ -260,7 +201,7 @@ pub fn get_default_install_path() -> Option<PathBuf> {
         executable_dir()
             .unwrap()
             .join(AUTHOR)
-            .join(APP_NAME.replace(" ", "_")),
+            .join(APP_NAME.replace(" ", "")),
     );
 }
 
@@ -270,7 +211,7 @@ pub fn get_install_path_tool() -> Option<PathBuf> {
         data_local_dir()
             .unwrap()
             .join(AUTHOR)
-            .join(APP_NAME.replace(" ", "_")),
+            .join(APP_NAME.replace(" ", "")),
     );
 
     // Another than not working on windows
@@ -278,6 +219,34 @@ pub fn get_install_path_tool() -> Option<PathBuf> {
         executable_dir()
             .unwrap()
             .join(AUTHOR)
-            .join(APP_NAME.replace(" ", "_")),
+            .join(APP_NAME.replace(" ", "")),
     );
+}
+
+mod test {
+    use super::Installer;
+
+    #[test]
+    fn install_instance() {
+        let mut installer = Installer::new("1.0.1".to_string());
+
+        assert_eq!(installer.version, "1.0.1".to_string());
+        assert!(!installer.is_installed());
+        assert!(installer.desktop_shortcut);
+        assert!(installer.menu_shortcut);
+
+        installer.set_menu_shortcut(false);
+        assert!(!installer.menu_shortcut);
+
+        installer.set_desktop_shortcut(false);
+        assert!(!installer.desktop_shortcut);
+    }
+
+    #[test]
+    fn install_path_installation_default () {
+    }
+
+    #[test]
+    fn install_path_installation() {
+    }
 }

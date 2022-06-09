@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use serde::Serialize;
 use tauri::{generate_context, generate_handler, Manager, State, Window};
 use tokio::sync::Mutex;
 
