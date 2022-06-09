@@ -24,9 +24,9 @@ const SliderImages = ({ img }) => {
 const SelectPath = () => {
     const [path, setPath] = useState("");
     useEffect(() => {
-        event.listen('install-path', (path) => {
-            setPath(path.payload);
-        });
+        // event.listen('install-path', (path) => {
+        //     setPath(path.payload);
+        // });
     }, [path]);
     const openFileDialogHandler = async () => {
         return openFileDialog({
@@ -75,7 +75,7 @@ const ShortcutStep = () => {
                     checked={shortcuts}
                     onChange={(v) => {
                         setShortcuts(v);
-                        invoke("set_desktop_shortcut", { shortcut: v});
+                        // invoke("set_desktop_shortcut", { shortcut: v});
                     }}
                     className="checkbox-item"
                     label="Create Desktop Shortcut"
@@ -84,7 +84,7 @@ const ShortcutStep = () => {
                     checked={menuShortcuts}
                     onChange={(v) => {
                         setMenuShortcuts(v);
-                        invoke("set_menu_shortcut", { shortcut: v});
+                        // invoke("set_menu_shortcut", { shortcut: v});
                     }}
                     className="checkbox-item"
                     label="Create Menu Shortcut"
@@ -95,27 +95,27 @@ const ShortcutStep = () => {
 }
 
 const InstallProgress = () => {
-    //const [installProgressText, setInstallProgressText] = useState(["Downloading Tools", "Unziping Tools", "Installing..", "Success Installation"]);
-    const [installProgressText, setInstallProgressText] = useState(null);
+    const [installProgressText, setInstallProgressText] = useState(["Downloading Tools", "Unziping Tools", "Installing..", "Success Installation"]);
+    // const [installProgressText, setInstallProgressText] = useState(null);
     const [installing, setInstalling] = useState(false);
 
     useEffect(() => {
         if (!installing) {
-            invoke("install");
+            // invoke("install");
             console.log("install");
             setInstalling(true);
         }
-        event.listen('install-progress', (progress) => {
-            let tmp = installProgressText;
-            // if (installProgressText.length + 1 > 4)
-            //     setInstallProgressText(tmp.shift());
-            if (tmp) {
-                if (!tmp.includes(progress.payload)) {
-                    tmp.push(progress.payload);
-                    setInstallProgressText(tmp);
-                }
-            }
-        });
+        // event.listen('install-progress', (progress) => {
+        //     let tmp = installProgressText;
+        //     // if (installProgressText.length + 1 > 4)
+        //     //     setInstallProgressText(tmp.shift());
+        //     if (tmp) {
+        //         if (!tmp.includes(progress.payload)) {
+        //             tmp.push(progress.payload);
+        //             setInstallProgressText(tmp);
+        //         }
+        //     }
+        // });
     }, [installProgressText, installing]);
 
     return (
@@ -123,9 +123,7 @@ const InstallProgress = () => {
             <div className="install-progress-text-container">
                 {(installProgressText || []).map(text => <span className="install-progress-text" >{text}</span>)}
             </div>
-            <div className="install-progress-bar">
-                <div className="install-progress-bar-fill" />
-            </div>
+            <div className="install-progress-bar"> </div>
         </div>
     )
 }
