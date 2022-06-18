@@ -1,6 +1,6 @@
 {
     "package": {
-        "productName": "adb-gui",
+        "productName": "adbgui_desktop",
         "version": "0.1.0"
     },
     "build": {
